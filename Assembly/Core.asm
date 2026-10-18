@@ -10,7 +10,7 @@ MultiplyRoutineStart : {           ;Configures and chooses failsafe counter valu
 
           LDX #%00000001                ;Load shift mask
           STX $0700                     ;Save shift mask
-           LDX #8                        ;Repeat count
+           LDX #0                        ;Repeat count
            STX $0703                     ;Save decermenting counter
           JMP MultiplyRoutineSetRepeater ;Determine 0703 value change if needed
      ReturnPoint :
@@ -29,7 +29,7 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
           CLC                       ;Clear carry flag
           JMP JumpLocation         ;Otherwise sart loop
      JumpLocation :
-          DEC $0703                 ;Decrement counter
+          INC $0703                 ;Decrement counter
           LDA $0706                ;Load copied multiplicant
           ROL A                    ;Rotate left
           STA $0706                ;Save rotated multiplicant
