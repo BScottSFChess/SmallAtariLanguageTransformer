@@ -6,17 +6,35 @@
 
 ;Bit shift multiplicator code
 
-MultiplyRoutineStart : {     ;Configures and makes first comparison
+MultiplyRoutineStart : {           ;Configures and chooses failsafe counter value
 
-     LDX #%00000001          ;Load shift mask
-     STX $0700               ;Save shift mask
-     LDX #8                  ;Repeat count
-     STX $0703               ;Save decermenting counter
-     LDA $0701               ;Get multiplicant
-     AND $0700               ;Compare with mask
-     STA $0705                ;Keep comparison in memory
-     LDA #0                   ;Reset accumulator
-     JMP MultiplyRoutineIter ;Start iter routine
+          LDX #%00000001                ;Load shift mask
+          STX $0700                     ;Save shift mask
+           LDX #8                        ;Repeat count
+           STX $0703                     ;Save decermenting counter
+          JMP MultiplyRoutineSetRepeater ;Determine 0703 value change if needed
+     ReturnPoint :
+          LDX #0                        ;Load zero
+          STX $0704                     ;Reinit output to zero
+          JMP MultiplyRoutineIter       ;Start iter routine
+}
+
+MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
+
+          LDA $0701                ;Loads multiplicant
+          STA $0706                ;Copies to new location for shifting
+          AND #%10000000           ;Compares leftmost bit for a one
+          BNE ReturnPoint          ;If one, return
+          JMP JumpLocation         ;Otherwise sart loop
+     JumpLocation :
+          LDA $0706                ;Load copied multiplicant
+          ROL A                    ;Rotate left
+          STA $0706                ;Save rotated multiplicant
+          AND #%10000000           ;Compare last bit
+				  DEC $0703                 ;Decriment failsafe counter
+          BNE ReturnPoint           ;If one, stop
+          BEQ JumpLocation         ;If zero, retry
+
 }
 
 MultiplyRoutineIter :              ;Checks for eighth run and performs
@@ -32,9 +50,11 @@ MultiplyRoutineIter :              ;Checks for eighth run and performs
 
      MultIterReset : {                  ;Resets for next shift comparison
 
+               LDA $0702                      ;Load preshift multiplicant
+               AND #%10000000                 ;Check for future overflow
                ASL $0700                     ;Shift for future mask use
                ASL $0702                     ;Shift for future miltiplicand use
-               BVS  MultiplyRoutineCheckOFlow ;Check if larger than 255
+               BNE  MultiplyRoutineCheckOFlow ;Check if larger than 255
           JumpBackPoint :                      ;Reentry to routine
                DEC $0703                     ;Decriment counter
                JMP MultiplyRoutineIter       ;Repeat the process
@@ -43,19 +63,30 @@ MultiplyRoutineIter :              ;Checks for eighth run and performs
 
 MultiplyRoutineCheckOFlow : {  ;Save overflow flag to memory
      LDY #1                    ;If flag is 1, load 1 to Y
-     STY $0706                  ;Store Y
+     STY $0705                  ;Store Y
      LDY #0                     ;Reset Y
      JMP JumpBackPoint         ;Go back
 }
 
-MultiplyRoutineCompute : {    ;Performs the addition
+MultiplyRoutineCompute : {              ;Performs the addition
 
-     LDA #0702                ;Set accumulator to prior value
-     CLC                      ;Clear carry flag to fix addition
-     ADC $0704                ;add number to be multiplied
-     STA $0704                ;Store addition to memory
-     LDA #0                   ;Reset accumulator
-     JMP MultIterReset        ;Goto prior
+          LDA $0702                     ;Set accumulator to prior value
+          CLC                           ;Clear carry flag to fix addition
+          ADC $0704                     ;add number to be multiplied
+          BVS MultiplyRoutineOFlowOnAdd ;If adding overfows record it
+     ReturnPointAdd :
+          STA $0704                     ;Store addition to memory
+          LDA #0                        ;Reset accumulator
+          JMP MultIterReset             ;Goto prior
+}
+
+MultiplyRoutineOFlowOnAdd : {   ;Records overflow on additions
+
+     LDY #1                     ;Loads 1 to Y
+     STY $0705                  ;Stores overflow if found
+     LDY #0                     ;Resets to 0
+     JMP ReturnPointAdd         ;Returns
+
 }
 
 BreakMult : { ;Generic breaking space for the multiplicator
