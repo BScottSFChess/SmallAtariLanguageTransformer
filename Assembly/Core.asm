@@ -14,7 +14,6 @@ MultiplyRoutineStart : {           ;Configures and chooses failsafe counter valu
            STX $0703                     ;Save decermenting counter
           JMP MultiplyRoutineSetRepeater ;Determine 0703 value change if needed
      ReturnPoint :
-          DEC $0703                      ;Lower failsafe counter one more time
           LDX #0                        ;Load zero
           STX $0704                     ;Reinit output to zero
           STX $0705                      ;Start overflow at zero
@@ -30,15 +29,17 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
           CLC                       ;Clear carry flag
           JMP JumpLocation         ;Otherwise sart loop
      JumpLocation :
+          DEC $0703                 ;Decrement counter
           LDA $0706                ;Load copied multiplicant
           ROL A                    ;Rotate left
           STA $0706                ;Save rotated multiplicant
           AND #%10000000           ;Compare last bit
           BNE ReturnPoint           ;If one, stop
           BEQ JumpLocation         ;If zero, retry
-          DEC $0703                 ;Lower failsafe counter
 
 }
+
+
 
 MultiplyRoutineIter :              ;Checks for eighth run and performs
                                     ;branching logic, after comparing again
