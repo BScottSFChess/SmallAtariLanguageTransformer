@@ -14,8 +14,10 @@ MultiplyRoutineStart : {           ;Configures and chooses failsafe counter valu
            STX $0703                     ;Save decermenting counter
           JMP MultiplyRoutineSetRepeater ;Determine 0703 value change if needed
      ReturnPoint :
+          DEC $0703                      ;Lower failsafe counter one more time
           LDX #0                        ;Load zero
           STX $0704                     ;Reinit output to zero
+          STX $0705                      ;Start overflow at zero
           JMP MultiplyRoutineIter       ;Start iter routine
 }
 
@@ -25,15 +27,16 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
           STA $0706                ;Copies to new location for shifting
           AND #%10000000           ;Compares leftmost bit for a one
           BNE ReturnPoint          ;If one, return
+          CLC                       ;Clear carry flag
           JMP JumpLocation         ;Otherwise sart loop
      JumpLocation :
           LDA $0706                ;Load copied multiplicant
           ROL A                    ;Rotate left
           STA $0706                ;Save rotated multiplicant
           AND #%10000000           ;Compare last bit
-				  DEC $0703                 ;Decriment failsafe counter
           BNE ReturnPoint           ;If one, stop
           BEQ JumpLocation         ;If zero, retry
+          DEC $0703                 ;Lower failsafe counter
 
 }
 
@@ -52,8 +55,10 @@ MultiplyRoutineIter :              ;Checks for eighth run and performs
 
                LDA $0702                      ;Load preshift multiplicant
                AND #%10000000                 ;Check for future overflow
+               STA $0707                      ;Store accumulator for future use
                ASL $0700                     ;Shift for future mask use
                ASL $0702                     ;Shift for future miltiplicand use
+               LDA $0707                       ;Recover accumulator
                BNE  MultiplyRoutineCheckOFlow ;Check if larger than 255
           JumpBackPoint :                      ;Reentry to routine
                DEC $0703                     ;Decriment counter
@@ -73,7 +78,7 @@ MultiplyRoutineCompute : {              ;Performs the addition
           LDA $0702                     ;Set accumulator to prior value
           CLC                           ;Clear carry flag to fix addition
           ADC $0704                     ;add number to be multiplied
-          BVS MultiplyRoutineOFlowOnAdd ;If adding overfows record it
+          BCS MultiplyRoutineOFlowOnAdd ;If adding overfows record it
      ReturnPointAdd :
           STA $0704                     ;Store addition to memory
           LDA #0                        ;Reset accumulator
