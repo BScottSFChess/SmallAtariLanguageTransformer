@@ -30,7 +30,7 @@ MultiplyRoutineStart : {           ;Configures and chooses failsafe counter valu
 MultiplyByZero : { ;Set to 0 if 0701 is zero
      LDX #0        ;Pull zero
      STX $0704     ;Set zero
-     JMP BreakMult ;Exit
+     JMP Break     ;Exit
 }
 
 MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
@@ -111,6 +111,7 @@ MultiplyRoutineOFlowOnAdd : {   ;Records overflow on additions
 BreakMult : {          ;Begin set answer to aero if overflow
      LDA $0705         ;Get is if overflow
      BNE MultSetToZero ;Goto set zero
+     JMP Break         ;Otherwise break
 }
 
 MultSetToZero : { ;Set to zero if overflow
