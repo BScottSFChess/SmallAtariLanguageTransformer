@@ -84,7 +84,7 @@ MultiplyRoutineCheckOFlow : {  ;Save overflow flag to memory
      LDY #1                    ;If flag is 1, load 1 to Y
      STY $0705                  ;Store Y
      LDY #0                     ;Reset Y
-     JMP JumpBackPoint         ;Go back
+     JMP BreakMult              ;Go back and stop
 }
 
 MultiplyRoutineCompute : {              ;Performs the addition
@@ -104,7 +104,7 @@ MultiplyRoutineOFlowOnAdd : {   ;Records overflow on additions
      LDY #1                     ;Loads 1 to Y
      STY $0705                  ;Stores overflow if found
      LDY #0                     ;Resets to 0
-     JMP ReturnPointAdd         ;Returns
+     JMP BreakMult              ;Returns to core aystem loop
 
 }
 
@@ -114,11 +114,12 @@ BreakMult : {          ;Begin set answer to aero if overflow
      JMP Break         ;Otherwise break
 }
 
-MultSetToZero : { ;Set to zero if overflow
-     LDA #0       ;Load zero
-     STA $0704    ;Set to zero
+MultSetToZero : {    ;Set to zero if overflow
+     LDA #0          ;Load zero
+     STA $0704       ;Set to zero
+     JMP BreakLooper. ;Goto idle system loop
 }
 
-Break : {
-
+BreakLooper : {       ;Idle system loop
+     JMP BreakLooper
 }
