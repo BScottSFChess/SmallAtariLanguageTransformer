@@ -30,6 +30,7 @@ MultiplyRoutineStart : {           ;Configures and chooses failsafe counter valu
 MultiplyByZero : { ;Set to 0 if 0701 is zero
      LDX #0        ;Pull zero
      STX $0704     ;Set zero
+     STX $0705
      JMP Break     ;Exit
 }
 
@@ -53,11 +54,11 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
 }
 
 MultiplyCheckForOne : {
-     LDA $0704            ;Load other number to multiply
-     CLC                  ;Clear carry
-     SBC #1                ;If and only if one then zero
-     BNE SetOverflowIfOne ;Jump if not zero (not one)
-     JMP JumpLocation     ;Otherwise continue
+     LDA $0702                   ;Load other number to multiply
+     CLC                         ;Clear carry
+     SBC #1                      ;If and only if one then zero
+     BNE SetOverflowIfOne        ;Jump if not zero (not one)
+     JMP MultiplyRoutineIter     ;Otherwise continue
 }
 
 SetOverflowIfOne : {
