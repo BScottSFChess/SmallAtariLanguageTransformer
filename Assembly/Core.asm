@@ -8,16 +8,29 @@
 
 MultiplyRoutineStart : {           ;Configures and chooses failsafe counter value
 
+          LDA $0701                      ;Load multiplied number to check for a zero
+          BEQ MultiplyByZero             ;Immediately output zero if 0701 is zero
+          LDA #0                           ;Reset A to zero
           LDX #%00000001                ;Load shift mask
           STX $0700                     ;Save shift mask
            LDX #0                        ;Repeat count
            STX $0703                     ;Save decermenting counter
           JMP MultiplyRoutineSetRepeater ;Determine 0703 value change if needed
      ReturnPoint :
+          LDA #8                        ;Load amount of default leading zeros
+          CLC                             ;Clear carry
+          SBC $0703                     ;Calculate number length
+          STA $0703                      ;Save number length
           LDX #0                        ;Load zero
           STX $0704                     ;Reinit output to zero
           STX $0705                      ;Start overflow at zero
           JMP MultiplyRoutineIter       ;Start iter routine
+}
+
+MultiplyByZero : { ;Set to 0 if 0701 is zero
+     LDX #0        ;Pull zero
+     STX $0704     ;Set zero
+     JMP BreakMult ;Exit
 }
 
 MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
@@ -26,10 +39,10 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
           STA $0706                ;Copies to new location for shifting
           AND #%10000000           ;Compares leftmost bit for a one
           BNE ReturnPoint          ;If one, return
-          CLC                       ;Clear carry flag
           JMP JumpLocation         ;Otherwise sart loop
      JumpLocation :
-          INC $0703                 ;Decrement counter
+          CLC                        ;Clear carry
+          INC $0703                 ;Incremen counter
           LDA $0706                ;Load copied multiplicant
           ROL A                    ;Rotate left
           STA $0706                ;Save rotated multiplicant
@@ -45,7 +58,7 @@ MultiplyRoutineIter :              ;Checks for eighth run and performs
                                     ;branching logic, after comparing again
 
      LDA $0703                     ;Load countdown
-     BEQ BreakMult                  ;Break on completion
+     BEQ Break                     ;Break on completion
      LDA $0701                      ;Load multiplicant
      AND $0700                      ;Compare with mask
      BNE MultiplyRoutineCompute    ;Add number to be multiplied
@@ -95,6 +108,16 @@ MultiplyRoutineOFlowOnAdd : {   ;Records overflow on additions
 
 }
 
-BreakMult : { ;Generic breaking space for the multiplicator
-     
+BreakMult : {          ;Begin set answer to aero if overflow
+     LDA $0705         ;Get is if overflow
+     BNE MultSetToZero ;Goto set zero
+}
+
+MultSetToZero : { ;Set to zero if overflow
+     LDA #0       ;Load zero
+     STA $0704    ;Set to zero
+}
+
+Break : {
+
 }
