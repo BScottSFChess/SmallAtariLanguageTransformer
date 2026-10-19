@@ -38,7 +38,7 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
           LDA $0701                ;Loads multiplicant
           STA $0706                ;Copies to new location for shifting
           AND #%10000000           ;Compares leftmost bit for a one
-          BNE ReturnPoint          ;If one, return
+          BNE MultiplyCheckForOne  ;If one, return and check other multiply value
           JMP JumpLocation         ;Otherwise sart loop
      JumpLocation :
           CLC                        ;Clear carry
@@ -52,6 +52,20 @@ MultiplyRoutineSetRepeater : {     ;Sets failsafe counter
 
 }
 
+MultiplyCheckForOne : {
+     LDA $0704            ;Load other number to multiply
+     CLC                  ;Clear carry
+     SBC #1                ;If and only if one then zero
+     BNE SetOverflowIfOne ;Jump if not zero (not one)
+     JMP JumpLocation     ;Otherwise continue
+}
+
+SetOverflowIfOne : {
+     LDY #1
+     STY $0705
+     LDY #0
+     JMP BreakMult
+}
 
 
 MultiplyRoutineIter :              ;Checks for eighth run and performs
